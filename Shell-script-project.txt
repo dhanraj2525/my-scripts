@@ -1,0 +1,48 @@
+#!/bin/bash
+
+function install(){
+        apt-get install -y ${1}
+        if [[ $? != 0 ]]
+        then
+                echo "${1} is not able to installed"
+                exit 1
+        fi
+}
+function maventarget(){
+        mvn ${1}
+        if [[ $? != 0 ]]
+        then
+                echo "${1} unsuccess"
+                exit 1
+        fi
+}
+if [[ $UID != 0 ]]
+then
+        echo "user is not root user"
+        exit 1
+fi
+
+apt-get update  >/dev/null
+if [[ $? != 0 ]]
+then
+        echo "apt-get not update"
+        exit 1
+fi
+
+install maven
+install tomcat*
+maventarget test
+maventarget package
+cp -a webapp/target/webapp.war /var/lib/tomcat9/webapps/
+if [[ $? != 0 ]]
+then
+        echo "war file is not able to copy into tomcat server"
+        exit 1
+fi
+
+systemctl restart tomcat9.service
+if [[ $? != 0 ]]
+then
+        echo "Not able to restart the service of tomcat server"
+        exit 1
+fi

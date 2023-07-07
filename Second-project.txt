@@ -1,0 +1,48 @@
+#!/bin/bash
+
+function install(){
+        if ! apt-get install -y ${1}
+        then
+                echo "${1} is not able to installed"
+                exit 1
+        fi
+}
+function maventarget(){
+        if ! mvn ${1}
+        then
+                echo "${1} unsuccess"
+                exit 1
+        fi
+}
+read -p "Please enter access path" ACCESS_PATH
+ACCESS_PATH=${ACCESS_PATH:-app}
+if [[ $UID != 0 ]]
+then
+        echo "user is not root user"
+        exit 1
+fi
+
+if ! apt-get update  >/dev/null
+then
+        echo "apt-get not update"
+        exit 1
+fi
+
+install maven
+install tomcat*
+maventarget test
+maventarget package
+if ! cp -a webapp/target/webapp.war /var/lib/tomcat9/webapps/${ACCESS_PATH}.war
+then
+        echo "war file is not able to copy into tomcat server"
+        exit 1
+fi
+
+if  systemctl restart tomcat9.service
+then
+        echo "Deployment successfully finished"
+else
+        echo "Unsuccessful Deployment"
+        exit 1
+fi
+exit 0
